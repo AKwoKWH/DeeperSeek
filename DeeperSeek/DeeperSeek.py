@@ -395,12 +395,21 @@ class DeepSeek:
 
         return await self._get_response(timeout = timeout)
 
-    async def regenerate_response(self, timeout: int = 60) -> Optional[Response]:
+    async def regenerate_response(
+        self, 
+        deepthink: bool = False,
+        search: bool = False,
+        timeout: int = 60,
+    ) -> Optional[Response]:
         """Regenerates the response from DeepSeek.
 
         Args
         ---------
             timeout (int): The maximum time to wait for the response.
+            deepthink (bool): Whether to enable deepthink mode.
+                - Setting this to True will add 20 seconds to the timeout.
+            search (bool): Whether to enable search mode.
+                - Setting this to True will add 60 seconds to the timeout.
 
         Returns
         ---------
@@ -414,6 +423,20 @@ class DeepSeek:
 
         if not self._initialized:
             raise MissingInitialization("You must run the initialize method before using this method.")
+
+        timeout += 20 if deepthink else 0
+        timeout += 60 if search else 0
+
+        # Find the parent div of both deepthink and search options
+        send_options_parent = await self.browser.main_tab.select(self.selectors.interactions.send_options_parent)
+
+        if deepthink != self._deepthink_enabled:
+            await send_options_parent.children[0].click() # DeepThink (R1)
+            self._deepthink_enabled = deepthink
+        
+        if search != self._search_enabled:
+            await send_options_parent.children[1].click() # Search
+            self._search_enabled = search
 
         # Find the last response so I can access it's buttons
         toolbar = await self.browser.main_tab.select_all(self.selectors.interactions.response_toolbar)
