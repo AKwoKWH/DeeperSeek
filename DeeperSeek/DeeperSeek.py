@@ -117,7 +117,8 @@ class DeepSeek:
         # Start the browser
         self.browser = await zendriver.start(
             chrome_args = self._chrome_args,
-            headless = self._headless
+            headless = self._headless,
+            sandbox = False,
         )
 
         self.logger.debug("Navigating to the main page...")
